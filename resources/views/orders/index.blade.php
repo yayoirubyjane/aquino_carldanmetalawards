@@ -25,6 +25,7 @@
                 <th class="p-3 border">Client Name</th>
                 <th class="p-3 border">Product</th>
                 <th class="p-3 border">Quantity</th>
+                <th class="p-3 border">Buildable Stock</th>
                 <th class="p-3 border">Handled By</th>
                 <th class="p-3 border">Actions</th>
             </tr>
@@ -36,6 +37,7 @@
                 <td class="p-3 border">{{ $order->client ? $order->client->ClientFN . ' ' . $order->client->ClientLN : 'N/A' }}</td>
                 <td class="p-3 border">{{ $order->product ? $order->product->ProductName : 'N/A' }}</td>
                 <td class="p-3 border">{{ $order->Quantity }}</td>
+                <td class="p-3 border">{{ $order->product ? $order->product->available_stock : 'N/A' }}</td>
                 <td class="p-3 border">{{ $order->employee ? $order->employee->EmployeeFN : 'N/A' }}</td>
                 <td class="p-3 border flex gap-3">
                     <a href="{{ route('orders.edit', $order->OrderID) }}" class="text-blue-500 hover:underline">Edit</a>

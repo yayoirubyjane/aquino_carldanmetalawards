@@ -6,12 +6,18 @@
     <form action="{{ route('orders.update', $order->OrderID) }}" method="POST" class="flex flex-col gap-4 max-w-md">
         @csrf
         @method('PUT')
-        
+
+        @if ($errors->any())
+            <div class="rounded border border-red-300 bg-red-50 px-4 py-3 text-red-700">
+                {{ $errors->first() }}
+            </div>
+        @endif
+
         <div>
             <label class="block font-bold mb-1">Client:</label>
             <select name="ClientID" required class="w-full border border-gray-300 p-2 rounded bg-white">
                 @foreach($clients as $client)
-                    <option value="{{ $client->ClientID }}" {{ $order->ClientID == $client->ClientID ? 'selected' : '' }}>
+                    <option value="{{ $client->ClientID }}" {{ old('ClientID', $order->ClientID) == $client->ClientID ? 'selected' : '' }}>
                         {{ $client->ClientFN }} {{ $client->ClientLN }}
                     </option>
                 @endforeach
@@ -22,8 +28,8 @@
             <label class="block font-bold mb-1">Product:</label>
             <select name="ProductID" required class="w-full border border-gray-300 p-2 rounded bg-white">
                 @foreach($products as $product)
-                    <option value="{{ $product->ProductID }}" {{ $order->ProductID == $product->ProductID ? 'selected' : '' }}>
-                        {{ $product->ProductName }}
+                    <option value="{{ $product->ProductID }}" {{ old('ProductID', $order->ProductID) == $product->ProductID ? 'selected' : '' }}>
+                        {{ $product->ProductName }} (Available: {{ $product->available_stock }})
                     </option>
                 @endforeach
             </select>
@@ -31,14 +37,14 @@
 
         <div>
             <label class="block font-bold mb-1">Quantity:</label>
-            <input type="number" name="Quantity" min="1" value="{{ $order->Quantity }}" required class="w-full border border-gray-300 p-2 rounded">
+            <input type="number" name="Quantity" min="1" value="{{ old('Quantity', $order->Quantity) }}" required class="w-full border border-gray-300 p-2 rounded">
         </div>
 
         <div>
             <label class="block font-bold mb-1">Assigned Employee:</label>
             <select name="EmployeeID" required class="w-full border border-gray-300 p-2 rounded bg-white">
                 @foreach($employees as $employee)
-                    <option value="{{ $employee->EmployeeID }}" {{ $order->EmployeeID == $employee->EmployeeID ? 'selected' : '' }}>
+                    <option value="{{ $employee->EmployeeID }}" {{ old('EmployeeID', $order->EmployeeID) == $employee->EmployeeID ? 'selected' : '' }}>
                         {{ $employee->EmployeeFN }} {{ $employee->EmployeeLN }}
                     </option>
                 @endforeach

@@ -9,14 +9,19 @@ class Material extends Model
 {
     use HasFactory;
 
-    // Define the custom primary key
     protected $primaryKey = 'Material_ID';
 
-    // Allow mass assignment for these columns
     protected $fillable = [
         'MaterialName',
         'MaterialType',
         'Stocks',
         'Price',
     ];
+
+    public function products()
+    {
+        return $this->belongsToMany(Product::class, 'product_material', 'Material_ID', 'ProductID')
+            ->withPivot('RequiredQuantity')
+            ->withTimestamps();
+    }
 }

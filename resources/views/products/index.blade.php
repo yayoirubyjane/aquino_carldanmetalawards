@@ -18,7 +18,8 @@
                 <th class="p-3 border">ID</th>
                 <th class="p-3 border">Product Name</th>
                 <th class="p-3 border">Type</th>
-                <th class="p-3 border">Material Used</th>
+                <th class="p-3 border">Materials Used</th>
+                <th class="p-3 border">Available to Build</th>
                 <th class="p-3 border">Price</th>
                 <th class="p-3 border">Actions</th>
             </tr>
@@ -29,8 +30,15 @@
                 <td class="p-3 border">{{ $product->ProductID }}</td>
                 <td class="p-3 border font-semibold">{{ $product->ProductName }}</td>
                 <td class="p-3 border">{{ $product->ProductType }}</td>
-                <td class="p-3 border">{{ $product->material ? $product->material->MaterialName : 'None' }}</td>
-                <td class="p-3 border">₱{{ number_format($product->Price, 2) }}</td>
+                <td class="p-3 border">
+                    @if($product->materials->isNotEmpty())
+                        {{ $product->materials->map(fn ($material) => $material->MaterialName . ' x' . $material->pivot->RequiredQuantity)->implode(', ') }}
+                    @else
+                        No materials assigned
+                    @endif
+                </td>
+                <td class="p-3 border">{{ $product->available_stock }}</td>
+                <td class="p-3 border">PHP {{ number_format($product->Price, 2) }}</td>
                 <td class="p-3 border flex gap-3">
                     <a href="{{ route('products.edit', $product->ProductID) }}" class="text-blue-500 hover:underline">Edit</a>
                     <form action="{{ route('products.destroy', $product->ProductID) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this product?');">

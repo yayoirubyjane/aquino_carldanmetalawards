@@ -5,30 +5,48 @@
 
     <form action="{{ route('products.store') }}" method="POST" class="flex flex-col gap-4 max-w-md">
         @csrf
-        
+
+        @if ($errors->any())
+            <div class="rounded border border-red-300 bg-red-50 px-4 py-3 text-red-700">
+                {{ $errors->first() }}
+            </div>
+        @endif
+
         <div>
             <label class="block font-bold mb-1">Product Name:</label>
-            <input type="text" name="ProductName" required class="w-full border border-gray-300 p-2 rounded">
+            <input type="text" name="ProductName" value="{{ old('ProductName') }}" required class="w-full border border-gray-300 p-2 rounded">
         </div>
 
         <div>
             <label class="block font-bold mb-1">Product Type:</label>
-            <input type="text" name="ProductType" required class="w-full border border-gray-300 p-2 rounded">
+            <input type="text" name="ProductType" value="{{ old('ProductType') }}" required class="w-full border border-gray-300 p-2 rounded">
         </div>
 
         <div>
-            <label class="block font-bold mb-1">Raw Material:</label>
-            <select name="Material_ID" required class="w-full border border-gray-300 p-2 rounded bg-white">
-                <option value="" disabled selected>Select a material...</option>
+            <label class="block font-bold mb-1">Materials Required Per Product Unit:</label>
+            <div class="space-y-3 rounded border border-gray-300 p-4">
                 @foreach($materials as $material)
-                    <option value="{{ $material->Material_ID }}">{{ $material->MaterialName }} ({{ $material->MaterialType }})</option>
+                    <div class="grid grid-cols-[1fr_140px] items-center gap-3">
+                        <div>
+                            <p class="font-semibold">{{ $material->MaterialName }}</p>
+                            <p class="text-sm text-gray-500">{{ $material->MaterialType }} | Stock: {{ $material->Stocks }}</p>
+                        </div>
+                        <input
+                            type="number"
+                            name="materials[{{ $material->Material_ID }}]"
+                            min="0"
+                            value="{{ old('materials.' . $material->Material_ID, 0) }}"
+                            class="w-full border border-gray-300 p-2 rounded"
+                            placeholder="Qty needed"
+                        >
+                    </div>
                 @endforeach
-            </select>
+            </div>
         </div>
 
         <div>
-            <label class="block font-bold mb-1">Selling Price (₱):</label>
-            <input type="number" step="0.01" name="Price" required class="w-full border border-gray-300 p-2 rounded">
+            <label class="block font-bold mb-1">Selling Price (PHP):</label>
+            <input type="number" step="0.01" name="Price" value="{{ old('Price') }}" required class="w-full border border-gray-300 p-2 rounded">
         </div>
 
         <div class="mt-4">
