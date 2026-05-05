@@ -30,7 +30,14 @@ class StockController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'SupplierID' => 'required|exists:suppliers,SupplierID',
+            'supplier_mode' => 'required|in:existing,new',
+            'SupplierID' => 'nullable|exists:suppliers,SupplierID',
+            'SupplierName' => 'nullable|string|max:100',
+            'SupplierContact' => 'nullable|string|max:20',
+            'SupplierStreet' => 'nullable|string|max:120',
+            'SupplierBarangay' => 'nullable|string|max:120',
+            'SupplierCity' => 'nullable|string|max:120',
+            'SupplierProvince' => 'nullable|string|max:120',
             'material_mode' => 'required|in:existing,new',
             'Material_ID' => 'nullable|exists:materials,Material_ID',
             'MaterialName' => 'nullable|string|max:100',
@@ -38,6 +45,23 @@ class StockController extends Controller
             'UnitCost' => 'nullable|numeric|min:0',
             'StockIN' => 'required|integer|min:0',
         ]);
+
+        if ($validated['supplier_mode'] === 'existing' && empty($validated['SupplierID'])) {
+            return back()->withInput()->withErrors([
+                'SupplierID' => 'Select an existing supplier to continue.',
+            ]);
+        }
+
+        if ($validated['supplier_mode'] === 'new') {
+            $request->validate([
+                'SupplierName' => 'required|string|max:100',
+                'SupplierContact' => 'required|string|max:20',
+                'SupplierStreet' => 'required|string|max:120',
+                'SupplierBarangay' => 'nullable|string|max:120',
+                'SupplierCity' => 'required|string|max:120',
+                'SupplierProvince' => 'nullable|string|max:120',
+            ]);
+        }
 
         if ($validated['material_mode'] === 'existing' && empty($validated['Material_ID'])) {
             return back()->withInput()->withErrors([
@@ -54,9 +78,33 @@ class StockController extends Controller
         }
 
         $result = DB::transaction(function () use ($validated) {
+            $supplierId = $validated['SupplierID'] ?? null;
             $materialId = $validated['Material_ID'] ?? null;
+            $createdSupplier = false;
             $createdMaterial = false;
             $mergedStock = false;
+
+            if ($validated['supplier_mode'] === 'new') {
+                $supplier = Supplier::whereRaw('LOWER(SupplierName) = ?', [strtolower(trim($validated['SupplierName']))])
+                    ->orderByDesc('updated_at')
+                    ->orderByDesc('SupplierID')
+                    ->first();
+
+                if (! $supplier) {
+                    $supplier = Supplier::create([
+                        'SupplierName' => $validated['SupplierName'],
+                        'SupplierContact' => $validated['SupplierContact'],
+                        'SupplierStreet' => $validated['SupplierStreet'],
+                        'SupplierBarangay' => $validated['SupplierBarangay'] ?? null,
+                        'SupplierCity' => $validated['SupplierCity'],
+                        'SupplierProvince' => $validated['SupplierProvince'] ?? null,
+                    ]);
+
+                    $createdSupplier = true;
+                }
+
+                $supplierId = $supplier->SupplierID;
+            }
 
             if ($validated['material_mode'] === 'new') {
                 $material = Material::whereRaw('LOWER(MaterialName) = ?', [strtolower(trim($validated['MaterialName']))])
@@ -78,7 +126,7 @@ class StockController extends Controller
                 $materialId = $material->Material_ID;
             }
 
-            $stock = Stock::where('SupplierID', $validated['SupplierID'])
+            $stock = Stock::where('SupplierID', $supplierId)
                 ->where('Material_ID', $materialId)
                 ->first();
 
@@ -90,7 +138,7 @@ class StockController extends Controller
                 $mergedStock = true;
             } else {
                 Stock::create([
-                    'SupplierID' => $validated['SupplierID'],
+                    'SupplierID' => $supplierId,
                     'Material_ID' => $materialId,
                     'StockIN' => $validated['StockIN'],
                     'StockOUT' => 0,
@@ -98,6 +146,7 @@ class StockController extends Controller
             }
 
             return [
+                'created_supplier' => $createdSupplier,
                 'merged_stock' => $mergedStock,
                 'created_material' => $createdMaterial,
             ];
@@ -107,7 +156,11 @@ class StockController extends Controller
             ? 'Inventory quantity added to the existing stock entry successfully!'
             : 'Inventory item saved successfully!';
 
-        if (($result['created_material'] ?? false) && ! ($result['merged_stock'] ?? false)) {
+        if (($result['created_supplier'] ?? false) && ($result['created_material'] ?? false) && ! ($result['merged_stock'] ?? false)) {
+            $message = 'New supplier, material, and inventory item saved successfully!';
+        } elseif (($result['created_supplier'] ?? false) && ! ($result['merged_stock'] ?? false)) {
+            $message = 'New supplier and inventory item saved successfully!';
+        } elseif (($result['created_material'] ?? false) && ! ($result['merged_stock'] ?? false)) {
             $message = 'New material and inventory item saved successfully!';
         }
 
