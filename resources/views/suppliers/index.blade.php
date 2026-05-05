@@ -4,10 +4,10 @@
     <div class="page-card">
         <div class="mb-6 flex items-center justify-between">
             <div>
-                <h2 class="text-2xl font-bold text-slate-900">Materials</h2>
-                <p class="text-sm text-slate-500">Unit costs are stored here. Stock balances are tracked in Inventory.</p>
+                <h2 class="text-2xl font-bold text-slate-900">Suppliers</h2>
+                <p class="text-sm text-slate-500">Maintain supplier contact details for inventory purchases.</p>
             </div>
-            <a href="{{ route('materials.create') }}" class="page-button-primary">Add Material</a>
+            <a href="{{ route('suppliers.create') }}" class="page-button-primary">Add Supplier</a>
         </div>
 
         @if (session('success'))
@@ -27,35 +27,33 @@
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Material Name</th>
-                        <th>Type</th>
-                        <th>Unit Cost</th>
-                        <th>Current Stock</th>
+                        <th>Supplier Name</th>
+                        <th>Contact</th>
+                        <th>Address</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse ($materials as $material)
+                    @forelse ($suppliers as $supplier)
                         <tr>
-                            <td>{{ $material->Material_ID }}</td>
-                            <td class="font-semibold">{{ $material->MaterialName }}</td>
-                            <td>{{ $material->MaterialType }}</td>
-                            <td>PHP {{ number_format($material->UnitCost, 2) }}</td>
-                            <td>{{ $material->current_quantity }}</td>
+                            <td>{{ $supplier->SupplierID }}</td>
+                            <td class="font-semibold">{{ $supplier->SupplierName }}</td>
+                            <td>{{ $supplier->SupplierContact }}</td>
+                            <td>{{ $supplier->full_address ?: '-' }}</td>
                             <td class="whitespace-nowrap">
                                 <div class="flex gap-2">
-                                    <a href="{{ route('materials.edit', $material->Material_ID) }}" class="page-button-secondary">Edit</a>
-                                    <form action="{{ route('materials.destroy', $material->Material_ID) }}" method="POST">
+                                    <a href="{{ route('suppliers.edit', $supplier->SupplierID) }}" class="page-button-secondary">Edit</a>
+                                    <form action="{{ route('suppliers.destroy', $supplier->SupplierID) }}" method="POST">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="page-button-danger" onclick="return confirm('Delete this material?')">Delete</button>
+                                        <button type="submit" class="page-button-danger" onclick="return confirm('Delete this supplier?')">Delete</button>
                                     </form>
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center text-slate-500">No materials found.</td>
+                            <td colspan="5" class="text-center text-slate-500">No suppliers found.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -63,7 +61,7 @@
         </div>
 
         <div class="mt-6">
-            {{ $materials->links() }}
+            {{ $suppliers->links() }}
         </div>
     </div>
 @endsection

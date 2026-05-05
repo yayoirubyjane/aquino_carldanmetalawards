@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Product extends Model
 {
@@ -28,6 +29,20 @@ class Product extends Model
             ->withTimestamps();
     }
 
+    // Get orders for this product through ProductOrder pivot
+    public function orders()
+    {
+        return $this->belongsToMany(Order::class, 'product_orders', 'ProductID', 'OrderID')
+            ->withPivot('Quantity', 'Price')
+            ->withTimestamps();
+    }
+
+    // Get productions for this product
+    public function productions()
+    {
+        return $this->hasMany(Production::class, 'ProductID', 'ProductID');
+    }
+
     public function getAvailableStockAttribute(): int
     {
         if (! $this->relationLoaded('materials')) {
@@ -46,7 +61,15 @@ class Product extends Model
                     return 0;
                 }
 
-                return intdiv((int) $material->Stocks, $requiredQuantity);
+                // Get total available quantity from stocks table for this material
+                $totalStockQuantity = Stock::where('Material_ID', $material->Material_ID)
+                    ->sum(DB::raw('Quantity'));
+
+                if ($totalStockQuantity <= 0) {
+                    return 0;
+                }
+
+                return intdiv($totalStockQuantity, $requiredQuantity);
             })
             ->min();
     }

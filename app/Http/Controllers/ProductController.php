@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Material;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -12,13 +13,18 @@ class ProductController extends Controller
 {
     public function index()
     {
-        $products = Product::with('materials')->get();
+        $products = Product::with('materials')->paginate(10);
+
         return view('products.index', compact('products'));
     }
 
     public function create()
     {
-        $materials = Material::all();
+        $materials = Material::with('stocks')
+            ->whereHas('stocks')
+            ->orderBy('MaterialName')
+            ->get();
+
         return view('products.create', compact('materials'));
     }
 
@@ -50,7 +56,16 @@ class ProductController extends Controller
     public function edit($id)
     {
         $product = Product::with('materials')->findOrFail($id);
-        $materials = Material::all();
+        $materials = Material::with('stocks')
+            ->where(function ($query) use ($product) {
+                $query->whereHas('stocks')
+                    ->orWhereHas('products', function ($productQuery) use ($product) {
+                        $productQuery->where('products.ProductID', $product->ProductID);
+                    });
+            })
+            ->orderBy('MaterialName')
+            ->get();
+
         return view('products.edit', compact('product', 'materials'));
     }
 
@@ -82,15 +97,26 @@ class ProductController extends Controller
 
     public function destroy($id)
     {
-        $product = Product::findOrFail($id);
-        $product->delete();
+        try {
+            $product = Product::findOrFail($id);
+            $product->delete();
+        } catch (QueryException $e) {
+            if ($e->getCode() === '23000') {
+                return redirect()->route('products.index')->with('error', 'Cannot delete this product because it is already used in orders or production records.');
+            }
+
+            return redirect()->route('products.index')->with('error', 'An error occurred while deleting the product.');
+        }
 
         return redirect()->route('products.index')->with('success', 'Product deleted successfully!');
     }
 
     protected function validatedMaterialQuantities(array $materials): array
     {
-        $existingMaterialIds = Material::pluck('Material_ID')->all();
+        $existingMaterialIds = Material::whereHas('stocks')
+            ->orWhereHas('products')
+            ->pluck('Material_ID')
+            ->all();
 
         $materialData = collect($materials)
             ->filter(fn ($quantity) => (int) $quantity > 0)

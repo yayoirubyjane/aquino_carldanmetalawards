@@ -5,24 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Production extends Model
+class ProductOrder extends Model
 {
     use HasFactory;
 
-    protected $primaryKey = 'ProductionID';
+    protected $primaryKey = 'ProductOrderID';
 
     protected $fillable = [
         'OrderID',
         'ProductID',
-        'ProdStatus',
-        'ProdNote',
-        'ProdStartDate',
-        'ProdFinishedDate',
-    ];
-
-    protected $casts = [
-        'ProdStartDate' => 'date',
-        'ProdFinishedDate' => 'date',
+        'Quantity',
+        'Price',
     ];
 
     public function order()
@@ -33,5 +26,10 @@ class Production extends Model
     public function product()
     {
         return $this->belongsTo(Product::class, 'ProductID', 'ProductID');
+    }
+
+    public function getTotalAttribute(): float
+    {
+        return (float) $this->Quantity * (float) $this->Price;
     }
 }

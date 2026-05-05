@@ -14,8 +14,7 @@ class Material extends Model
     protected $fillable = [
         'MaterialName',
         'MaterialType',
-        'Stocks',
-        'Price',
+        'UnitCost',
     ];
 
     public function products()
@@ -23,5 +22,19 @@ class Material extends Model
         return $this->belongsToMany(Product::class, 'product_material', 'Material_ID', 'ProductID')
             ->withPivot('RequiredQuantity')
             ->withTimestamps();
+    }
+
+    public function stocks()
+    {
+        return $this->hasMany(Stock::class, 'Material_ID', 'Material_ID');
+    }
+
+    public function getCurrentQuantityAttribute(): int
+    {
+        if ($this->relationLoaded('stocks')) {
+            return (int) $this->stocks->sum(fn (Stock $stock) => $stock->Quantity);
+        }
+
+        return (int) $this->stocks()->sum('Quantity');
     }
 }
