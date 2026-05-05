@@ -22,7 +22,7 @@ class StockController extends Controller
     public function create()
     {
         $suppliers = Supplier::orderBy('SupplierName')->get();
-        $materials = Material::orderBy('MaterialName')->get();
+        $materials = $this->getSelectableMaterials();
 
         return view('stocks.create', compact('suppliers', 'materials'));
     }
@@ -37,7 +37,6 @@ class StockController extends Controller
             'MaterialType' => 'nullable|string|max:50',
             'UnitCost' => 'nullable|numeric|min:0',
             'StockIN' => 'required|integer|min:0',
-            'StockOUT' => 'required|integer|min:0',
         ]);
 
         if ($validated['material_mode'] === 'existing' && empty($validated['Material_ID'])) {
@@ -54,35 +53,72 @@ class StockController extends Controller
             ]);
         }
 
-        DB::transaction(function () use ($validated) {
+        $result = DB::transaction(function () use ($validated) {
             $materialId = $validated['Material_ID'] ?? null;
+            $createdMaterial = false;
+            $mergedStock = false;
 
             if ($validated['material_mode'] === 'new') {
-                $material = Material::create([
-                    'MaterialName' => $validated['MaterialName'],
-                    'MaterialType' => $validated['MaterialType'],
-                    'UnitCost' => $validated['UnitCost'],
-                ]);
+                $material = Material::whereRaw('LOWER(MaterialName) = ?', [strtolower(trim($validated['MaterialName']))])
+                    ->whereRaw('LOWER(MaterialType) = ?', [strtolower(trim($validated['MaterialType']))])
+                    ->orderByDesc('updated_at')
+                    ->orderByDesc('Material_ID')
+                    ->first();
+
+                if (! $material) {
+                    $material = Material::create([
+                        'MaterialName' => $validated['MaterialName'],
+                        'MaterialType' => $validated['MaterialType'],
+                        'UnitCost' => $validated['UnitCost'],
+                    ]);
+
+                    $createdMaterial = true;
+                }
 
                 $materialId = $material->Material_ID;
             }
 
-            Stock::create([
-                'SupplierID' => $validated['SupplierID'],
-                'Material_ID' => $materialId,
-                'StockIN' => $validated['StockIN'],
-                'StockOUT' => $validated['StockOUT'],
-            ]);
+            $stock = Stock::where('SupplierID', $validated['SupplierID'])
+                ->where('Material_ID', $materialId)
+                ->first();
+
+            if ($stock) {
+                $stock->update([
+                    'StockIN' => $stock->StockIN + $validated['StockIN'],
+                ]);
+
+                $mergedStock = true;
+            } else {
+                Stock::create([
+                    'SupplierID' => $validated['SupplierID'],
+                    'Material_ID' => $materialId,
+                    'StockIN' => $validated['StockIN'],
+                    'StockOUT' => 0,
+                ]);
+            }
+
+            return [
+                'merged_stock' => $mergedStock,
+                'created_material' => $createdMaterial,
+            ];
         });
 
-        return redirect()->route('stocks.index')->with('success', 'Inventory item saved successfully!');
+        $message = ($result['merged_stock'] ?? false)
+            ? 'Inventory quantity added to the existing stock entry successfully!'
+            : 'Inventory item saved successfully!';
+
+        if (($result['created_material'] ?? false) && ! ($result['merged_stock'] ?? false)) {
+            $message = 'New material and inventory item saved successfully!';
+        }
+
+        return redirect()->route('stocks.index')->with('success', $message);
     }
 
     public function edit($id)
     {
         $stock = Stock::findOrFail($id);
         $suppliers = Supplier::orderBy('SupplierName')->get();
-        $materials = Material::orderBy('MaterialName')->get();
+        $materials = $this->getSelectableMaterials($stock->Material_ID);
 
         return view('stocks.edit', compact('stock', 'suppliers', 'materials'));
     }
@@ -93,11 +129,14 @@ class StockController extends Controller
             'SupplierID' => 'required|exists:suppliers,SupplierID',
             'Material_ID' => 'required|exists:materials,Material_ID',
             'StockIN' => 'required|integer|min:0',
-            'StockOUT' => 'required|integer|min:0',
         ]);
 
         $stock = Stock::findOrFail($id);
-        $stock->update($validated);
+        $stock->update([
+            'SupplierID' => $validated['SupplierID'],
+            'Material_ID' => $validated['Material_ID'],
+            'StockIN' => $validated['StockIN'],
+        ]);
 
         return redirect()->route('stocks.index')->with('success', 'Stock entry updated successfully!');
     }
@@ -122,5 +161,24 @@ class StockController extends Controller
         });
 
         return redirect()->route('stocks.index')->with('success', 'Stock entry deleted successfully!');
+    }
+
+    protected function getSelectableMaterials(?int $includeMaterialId = null)
+    {
+        return Material::withCount('stocks')
+            ->orderBy('MaterialName')
+            ->orderBy('MaterialType')
+            ->orderByDesc('stocks_count')
+            ->orderByDesc('updated_at')
+            ->orderByDesc('Material_ID')
+            ->get()
+            ->unique(function (Material $material) use ($includeMaterialId) {
+                if ($includeMaterialId && $material->Material_ID === $includeMaterialId) {
+                    return 'include-'.$material->Material_ID;
+                }
+
+                return strtolower(trim($material->MaterialName)).'|'.strtolower(trim($material->MaterialType));
+            })
+            ->values();
     }
 }

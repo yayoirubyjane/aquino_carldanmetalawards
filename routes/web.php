@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ClientController;
 use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
@@ -15,6 +16,7 @@ Route::get('/', function () {
 
 Route::resource('materials', MaterialController::class)->except('show');
 Route::resource('products', ProductController::class)->except('show');
+Route::resource('clients', ClientController::class)->except('show');
 Route::resource('suppliers', SupplierController::class)->except('show');
 Route::resource('stocks', StockController::class)->except('show');
 Route::resource('orders', OrderController::class)->except('show');

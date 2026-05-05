@@ -20,7 +20,12 @@
 
             <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
                 <div>
-                    <label class="mb-2 block text-sm font-semibold text-slate-700">Client</label>
+                    <div class="mb-2 flex items-center justify-between gap-3">
+                        <label class="block text-sm font-semibold text-slate-700">Client</label>
+                        <a href="{{ route('clients.create', ['redirect_to' => route('orders.edit', ['order' => $order->OrderID], false)]) }}" class="text-sm font-semibold text-sky-600 hover:text-sky-700">
+                            Add client
+                        </a>
+                    </div>
                     <select name="ClientID" class="page-select" required>
                         @foreach ($clients as $client)
                             <option value="{{ $client->ClientID }}" @selected(old('ClientID', $order->ClientID) == $client->ClientID)>{{ $client->full_name }}</option>
@@ -53,7 +58,8 @@
 
                 <div>
                     <label class="mb-2 block text-sm font-semibold text-slate-700">Delivery Date</label>
-                    <input type="date" name="DeliveryDate" value="{{ old('DeliveryDate', optional($order->DeliveryDate)->format('Y-m-d')) }}" class="page-input" required>
+                    <input type="date" name="DeliveryDate" value="{{ old('DeliveryDate', optional($order->DeliveryDate)->format('Y-m-d')) }}" class="page-input">
+                    <p class="mt-1 text-xs text-slate-500">Optional while the order is still in production.</p>
                 </div>
             </div>
 

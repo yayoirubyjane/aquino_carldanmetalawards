@@ -4,7 +4,7 @@
     <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
             <h2 class="text-2xl font-bold text-slate-900">Inventory</h2>
-            <p class="text-sm text-slate-500">Manage stock movement here. New materials and stock entries are saved from one inventory form.</p>
+            <p class="text-sm text-slate-500">Manage stock movement here. Stock out is deducted automatically based on production usage.</p>
         </div>
         <div class="flex flex-wrap gap-2">
             <a href="{{ route('stocks.create') }}" class="page-button-primary">Add Inventory Item</a>

@@ -3,6 +3,7 @@
 @section('content')
     <div class="page-card max-w-4xl">
         <h2 class="mb-6 text-2xl font-bold text-slate-900">Edit Stock Entry</h2>
+        <p class="mb-6 text-sm text-slate-500">Stock out is system-generated from production usage. You can adjust stock in, supplier, or material here.</p>
 
         @if ($errors->any())
             <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
@@ -42,7 +43,8 @@
 
                 <div>
                     <label class="mb-2 block text-sm font-semibold text-slate-700">Stock Out</label>
-                    <input type="number" min="0" name="StockOUT" value="{{ old('StockOUT', $stock->StockOUT) }}" class="page-input" required>
+                    <input type="text" value="{{ $stock->StockOUT }}" class="page-input bg-slate-100" readonly>
+                    <p class="mt-1 text-xs text-slate-500">Automatically deducted when production moves to in progress.</p>
                 </div>
 
                 <div>
@@ -60,17 +62,15 @@
 
     <script>
         const stockInInput = document.querySelector('input[name="StockIN"]');
-        const stockOutInput = document.querySelector('input[name="StockOUT"]');
         const quantityPreview = document.getElementById('quantity-preview');
+        const stockOutValue = {{ (int) $stock->StockOUT }};
 
         function updateQuantityPreview() {
             const stockIn = Number(stockInInput.value || 0);
-            const stockOut = Number(stockOutInput.value || 0);
-            quantityPreview.value = stockIn - stockOut;
+            quantityPreview.value = stockIn - stockOutValue;
         }
 
         stockInInput.addEventListener('input', updateQuantityPreview);
-        stockOutInput.addEventListener('input', updateQuantityPreview);
         updateQuantityPreview();
     </script>
 @endsection

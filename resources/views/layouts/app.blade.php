@@ -12,6 +12,7 @@
 
         $navItems = [
             'products.index' => 'Products',
+            'clients.index' => 'Clients',
             'suppliers.index' => 'Suppliers',
             'stocks.index' => 'Inventory',
             'orders.index' => 'Orders',

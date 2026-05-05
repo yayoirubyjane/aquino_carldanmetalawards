@@ -7,6 +7,7 @@
 
     <div class="page-card max-w-5xl">
         <h2 class="mb-6 text-2xl font-bold text-slate-900">Add Inventory Item</h2>
+        <p class="mb-6 text-sm text-slate-500">Stock out is deducted automatically once production starts, so you only need to encode incoming stock here.</p>
 
         @if ($errors->any())
             <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-700">
@@ -78,20 +79,16 @@
                     </div>
                 </div>
 
-                <div class="mt-5 grid gap-5 md:grid-cols-3">
+                <div class="mt-5 grid gap-5 md:grid-cols-2">
                     <div>
                         <label class="mb-2 block text-sm font-semibold text-slate-700">Stock In</label>
                         <input type="number" min="0" name="StockIN" value="{{ old('StockIN', 0) }}" class="page-input" required>
                     </div>
 
                     <div>
-                        <label class="mb-2 block text-sm font-semibold text-slate-700">Stock Out</label>
-                        <input type="number" min="0" name="StockOUT" value="{{ old('StockOUT', 0) }}" class="page-input" required>
-                    </div>
-
-                    <div>
-                        <label class="mb-2 block text-sm font-semibold text-slate-700">Computed Quantity</label>
-                        <input type="text" id="quantity-preview" value="0" class="page-input bg-slate-100" readonly>
+                        <label class="mb-2 block text-sm font-semibold text-slate-700">Available Quantity</label>
+                        <input type="text" id="quantity-preview" value="{{ old('StockIN', 0) }}" class="page-input bg-slate-100" readonly>
+                        <p class="mt-1 text-xs text-slate-500">This starts equal to stock in. Stock out will be updated by the system.</p>
                     </div>
                 </div>
             </div>
@@ -105,7 +102,6 @@
 
     <script>
         const stockInInput = document.querySelector('input[name="StockIN"]');
-        const stockOutInput = document.querySelector('input[name="StockOUT"]');
         const quantityPreview = document.getElementById('quantity-preview');
         const materialModeInputs = document.querySelectorAll('input[name="material_mode"]');
         const newMaterialFields = document.getElementById('new-material-fields');
@@ -113,8 +109,7 @@
 
         function updateQuantityPreview() {
             const stockIn = Number(stockInInput.value || 0);
-            const stockOut = Number(stockOutInput.value || 0);
-            quantityPreview.value = stockIn - stockOut;
+            quantityPreview.value = stockIn;
         }
 
         function updateMaterialMode() {
@@ -126,7 +121,6 @@
         }
 
         stockInInput.addEventListener('input', updateQuantityPreview);
-        stockOutInput.addEventListener('input', updateQuantityPreview);
         materialModeInputs.forEach((input) => input.addEventListener('change', updateMaterialMode));
 
         updateQuantityPreview();
