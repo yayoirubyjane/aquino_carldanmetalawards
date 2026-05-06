@@ -28,6 +28,13 @@ class ProductController extends Controller
         return view('products.create', compact('materials'));
     }
 
+    public function show($id)
+    {
+        $product = Product::with(['materials.stocks'])->findOrFail($id);
+
+        return view('products.show', compact('product'));
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
